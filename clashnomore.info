@@ -1,0 +1,5 @@
+name = Clash-no-more!
+description = Prevents hook name collisions, by allowing modules to specify a whitelist.
+core = 7.x
+
+dependencies[] = xautoload

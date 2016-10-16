@@ -1,0 +1,70 @@
+<?php
+use Drupal\clashnomore\ModuleImplementsAlter\ModuleImplementsAlter_Clashnomore;
+use Drupal\clashnomore\ModuleImplementsAlter\ModuleImplementsAlterInterface;
+
+/**
+ * Implements hook_module_implements_alter().
+ *
+ * @param string[]|false[]|mixed[] $implementations
+ *   Format: $[$module] = $group|false
+ * @param string $hook
+ */
+function clashnomore_module_implements_alter(array &$implementations, $hook) {
+
+  static $moduleImplementsAlter;
+
+  if (NULL === $moduleImplementsAlter) {
+    $moduleImplementsAlter = _clashnomore_load_from_cache();
+  }
+
+  $moduleImplementsAlter->moduleImplementsAlter($implementations, $hook);
+}
+
+/**
+ * @return \Drupal\clashnomore\ModuleImplementsAlter\ModuleImplementsAlterInterface
+ */
+function _clashnomore_load_from_cache() {
+
+  if (FALSE !== $data = cache_get('clashnomore:mia', 'cache_bootstrap')) {
+    if ($data->data instanceof ModuleImplementsAlterInterface) {
+      return $data->data;
+    }
+  }
+
+  $mia = ModuleImplementsAlter_Clashnomore::create();
+  cache_set('clashnomore:mia', $mia, 'cache_bootstrap');
+  return $mia;
+}
+
+/**
+ * Implements hook_clashnomore_info().
+ *
+ * @return mixed[]
+ *   Format: $[$hook] = $group|false
+ */
+function clashnomore_clashnomore_info() {
+  return [
+    'clashnomore_info' => FALSE,
+    'clashnomore_info_alter' => FALSE,
+  ];
+}
+
+/**
+ * Implements hook_clashnomore_info_alter().
+ *
+ * Kills some known culprits.
+ *
+ * @param mixed[][] $hooks_by_module
+ *   List of explicit hooks per module.
+ *   Format: $[$module][$hook] = $group|false
+ * @param true[] $clashnomore_modules
+ *   List of modules that opt out of regular magic hook discovery.
+ *   Usually these are the same module names as above, unless they are altered.
+ *   Format: $[$module] = true
+ */
+function clashnomore_clashnomore_info_alter(array &$hooks_by_module, array &$clashnomore_modules) {
+
+  // Kill field + hook_group_permission().
+  /* @see field_group_permission() */
+  $hooks_by_module['field_group']['permission'] = FALSE;
+}
